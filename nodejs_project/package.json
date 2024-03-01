@@ -1,0 +1,14 @@
+{
+  "name": "nodejs_project",
+  "version": "1.0.0",
+  "description": "This is my first node project",
+  "main": "index.js",
+  "scripts": {
+    "test": "nodejs"
+  },
+  "author": "Abhijeet Panigrahi",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.3"
+  }
+}
