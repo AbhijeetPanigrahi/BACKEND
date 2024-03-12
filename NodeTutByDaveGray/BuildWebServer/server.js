@@ -13,15 +13,39 @@ class Emitter extends EventEmitter {}
 
 // intialize object
 const myEmitter = new Emitter();
+myEmitter.on("log", (msg, fileName) => logEvents(msg, fileName));
 
 // myEmitter.on("log", (msg) => logEvents(msg));
 // myEmitter.emit("log", "logEvent emitted");
 
 // creating a port
 const PORT = process.env.PORT || 3500;
+
+const serveFile = async (filePath, contentType, response) => {
+  try {
+    const rawData = await fsPromises.readFile(
+      filePath,
+      !contentType.includes("image") ? "utf8" : ""
+    );
+    const data =
+      contentType === "application/json" ? JSON.parse(rawData) : rawData;
+    response.writeHead(filePath.includes("404.html") ? 404 : 200, {
+      "content-type": contentType,
+    });
+    response.end(
+      contentType === "application/json" ? JSON.stringify(data) : data
+    );
+  } catch (err) {
+    console.log(err);
+    myEmitter.emit("log", `${err.name}\t${err.message}`, "errLog.txt");
+    response.statusCode = 500;
+    response.end();
+  }
+};
 //creating a minimal server
 const server = http.createServer((req, res) => {
   console.log(req.url, req.method);
+  myEmitter.emit("log", `${req.url}\t${req.method}`, "reqLog.txt");
 
   const extension = path.extname(req.url);
 
@@ -41,6 +65,7 @@ const server = http.createServer((req, res) => {
       break;
     case ".jpg":
       contentType = "image/jpeg";
+      console.log(extension);
       break;
     case ".png":
       contentType = "image/png";
@@ -56,11 +81,11 @@ const server = http.createServer((req, res) => {
 
   let filePath =
     contentType === "text/html" && req.url === "/"
-      ? path.join(__dirname, "views", "index.html")
+      ? path.join(__dirname, "view", "index.html")
       : contentType === "text/html" && req.url.slice(-1) === "/"
-      ? path.join(__dirname, "views", req.url, "index.html")
+      ? path.join(__dirname, "view", req.url, "index.html")
       : contentType === "text/html"
-      ? path.join(__dirname, "views", req.url)
+      ? path.join(__dirname, "view", req.url)
       : path.join(__dirname, req.url);
 
   //making the html extension (optional)
@@ -70,9 +95,25 @@ const server = http.createServer((req, res) => {
 
   if (fileExists) {
     //serve the file
+    serveFile(filePath, contentType, res);
   } else {
     // 404
     // 301  (redirect)
+    // console.log(path.parse(filePath));
+    switch (path.parse(filePath).base) {
+      case "old-page.html":
+        res.writeHead(301, { location: "/new-page.html" });
+        res.end();
+        break;
+      case "www-page.html":
+        res.writeHead(301, { location: "/" });
+        res.end();
+        break;
+      default:
+        // serve a404 response
+        serveFile(path.join(__dirname, "view", "404.html"), "text/html", res);
+    }
   }
 });
+
 server.listen(PORT, () => console.log(`Server is working on port ${PORT}`));
