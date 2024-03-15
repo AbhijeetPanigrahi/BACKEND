@@ -3,6 +3,7 @@ const app = express();
 const path = require("path");
 const cors = require("cors");
 const { logger } = require("./middleware/logEvents");
+const errorHandler = require("./middleware/errorHandler");
 // creating a port
 const PORT = process.env.PORT || 3500;
 
@@ -21,7 +22,21 @@ app.use((req, res, next) => {
 app.use(logger);
 
 //  Cross Origin Resource Shairing    // (for cors error in google console)
-app.use(cors());
+const whitelist = [
+  "https://www.yoursite.com",
+  "http://127.0.0.1:5500",
+  "http://localhost:3500",
+];
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    }
+  },
+  optionSuccessfulStatus: 200,
+};
+
+app.use(cors(corsOptions));
 
 // built-in middleware to handle urlencoded data
 // in other words form data
@@ -80,5 +95,7 @@ app.get("/chain(.html)?", [one, two, three]);
 app.get("/*", (req, res) => {
   res.status(404).sendFile(path.join(__dirname, "view", "404.html"));
 });
+
+app.use(errorHandler);
 
 app.listen(PORT, () => console.log(`Server is working on port ${PORT}`));
