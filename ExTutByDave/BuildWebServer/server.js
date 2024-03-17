@@ -47,50 +47,43 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 // serve static files
-app.use(express.static(path.join(__dirname, "/public")));
+app.use("/", express.static(path.join(__dirname, "/public")));
+app.use("/subdir", express.static(path.join(__dirname, "/public")));
 
-app.get("^/$|/index(.html)?", (req, res) => {
-  // res.send("hello world");
-  // res.sendFile("./view/index.html", { root: __dirname });    (we do this in node)
-  res.sendFile(path.join(__dirname, "view", "index.html"));
-});
+// applying the router
+app.use("/subdir", require("./routes/subdir"));
+app.use("/", require("./routes/root"));
 
-app.get("/new-page(.html)?", (req, res) => {
-  res.sendFile(path.join(__dirname, "view", "new-page.html"));
-});
-
-app.get("/old-page(.html)?", (req, res) => {
-  res.redirect(301, "new-page.html"); // 302 by default
-});
+app.use("/employees", require("./routes/api/employees"));
 
 //  route handlers
-app.get(
-  "/hello(.html)?",
-  (req, res, next) => {
-    console.log("attempted to load hello.html");
-    next();
-  },
-  (req, res) => {
-    res.send("hello world");
-  }
-);
+// app.get(
+//   "/hello(.html)?",
+//   (req, res, next) => {
+//     console.log("attempted to load hello.html");
+//     next();
+//   },
+//   (req, res) => {
+//     res.send("hello world");
+//   }
+// );
 
 //Chaining route handlers
 
-const one = (req, res, next) => {
-  console.log("one");
-  next();
-};
-const two = (req, res, next) => {
-  console.log("two");
-  next();
-};
-const three = (req, res) => {
-  console.log("three");
-  res.send("finished !");
-};
+// const one = (req, res, next) => {
+//   console.log("one");
+//   next();
+// };
+// const two = (req, res, next) => {
+//   console.log("two");
+//   next();
+// };
+// const three = (req, res) => {
+//   console.log("three");
+//   res.send("finished !");
+// };
 
-app.get("/chain(.html)?", [one, two, three]);
+// app.get("/chain(.html)?", [one, two, three]);
 
 app.get("/*", (req, res) => {
   res.status(404).sendFile(path.join(__dirname, "view", "404.html"));
